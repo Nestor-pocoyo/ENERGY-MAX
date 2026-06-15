@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #07111f;
+  background: #f4f8ff;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  overflow-x: hidden;
+  background: #f4f8ff;
+}
+
+button,
+a,
+input,
+select {
+  outline-color: #2378ff;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(35, 120, 255, 0.42);
+  outline-offset: 3px;
+}
+
+.hero-bg {
+  background-image:
+    linear-gradient(180deg, rgba(7, 17, 31, 0.12), rgba(7, 17, 31, 0.94)),
+    url('/energymax-pattern.svg');
+  background-size: cover;
+  background-position: center;
+}
+
+.can {
+  --primary: #2378ff;
+  --secondary: #111d4f;
+  --accent: #7c3cff;
+  position: relative;
+  width: clamp(96px, 18vw, 188px);
+  aspect-ratio: 0.48;
+  filter: drop-shadow(0 34px 42px rgba(7, 17, 31, 0.38));
+}
+
+.can.small {
+  width: 58px;
+}
+
+.can-body {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 46% 46% 38% 38% / 7% 7% 6% 6%;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.42), transparent 15%, transparent 78%, rgba(255, 255, 255, 0.2)),
+    linear-gradient(135deg, var(--secondary), var(--primary) 52%, var(--accent));
+  box-shadow:
+    inset 20px 0 36px rgba(255, 255, 255, 0.18),
+    inset -24px 0 36px rgba(0, 0, 0, 0.22);
+}
+
+.can-body::before,
+.can-body::after {
+  position: absolute;
+  left: 50%;
+  width: 88%;
+  height: 6%;
+  content: '';
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: linear-gradient(90deg, #dce7f5, #ffffff 45%, #9db0c4);
+}
+
+.can-body::before {
+  top: -2%;
+}
+
+.can-body::after {
+  bottom: -2%;
+}
+
+.can-label {
+  position: absolute;
+  inset: 20% 10%;
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+  color: white;
+  text-align: center;
+}
+
+.can-label strong {
+  font-size: clamp(1.25rem, 3.8vw, 2.35rem);
+  line-height: 0.9;
+}
+
+.small .can-label strong {
+  font-size: 0.7rem;
+}
+
+.can-label span {
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0.22rem 0.52rem;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.sparkles {
+  position: absolute;
+  inset: 9% 8%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.8) 0 2px, transparent 3px) 8% 14% / 38px 38px,
+    radial-gradient(circle, rgba(255, 255, 255, 0.54) 0 1px, transparent 2px) 82% 68% / 42px 42px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="EnergyMax">
+  <rect width="96" height="96" rx="26" fill="#07111f"/>
+  <path d="M55 8 24 54h24l-7 34 32-51H49l6-29Z" fill="#22cfc2"/>
+  <path d="M55 8 37 48h18L41 88l32-51H49l6-29Z" fill="#2378ff" opacity=".9"/>
+</svg>
