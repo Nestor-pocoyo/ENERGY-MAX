@@ -4,10 +4,13 @@ export type Product = {
   id: ProductId;
   name: 'Drink2Go' | 'HelTea';
   category: string;
+  badge: string;
   tagline: string;
   description: string;
   price: number;
   volume: string;
+  image: string;
+  imageAlt: string;
   benefits: string[];
   moments: string[];
   colors: {
@@ -15,6 +18,7 @@ export type Product = {
     secondary: string;
     accent: string;
     soft: string;
+    dark: string;
   };
 };
 
@@ -31,37 +35,43 @@ export const products: Product[] = [
   {
     id: 'drink2go',
     name: 'Drink2Go',
-    category: 'Bebida energetica',
-    tagline: 'La energia que sigue tu ritmo',
-    description:
-      'Una opcion practica para momentos de estudio, entrenamiento y jornadas largas dentro del prototipo EnergyMax.',
+    category: 'Bebida energética',
+    badge: 'Más vendido',
+    tagline: 'Energía que sigue tu ritmo',
+    description: 'Para estudio, entrenamiento y días largos. Sabor intenso, formato práctico y precio competitivo.',
     price: 35,
     volume: '250 ml',
-    benefits: ['Energia', 'Concentracion', 'Practicidad'],
+    image: '/drink2go-product.png',
+    imageAlt: 'Render real de Drink2Go EnergyMax',
+    benefits: ['Energía', 'Enfoque', 'Ritmo activo'],
     moments: ['Estudio', 'Entrenamiento', 'Jornada larga'],
     colors: {
       primary: '#2378ff',
       secondary: '#111d4f',
       accent: '#7c3cff',
       soft: '#eaf2ff',
+      dark: '#08142f',
     },
   },
   {
     id: 'heltea',
     name: 'HelTea',
-    category: 'Bebida refrescante a base de te',
-    tagline: 'Activate de una forma mas ligera',
-    description:
-      'Una alternativa fresca y ligera para seguir el dia con una experiencia visual mas natural y equilibrada.',
+    category: 'Bebida refrescante a base de té',
+    badge: 'Opción ligera',
+    tagline: 'Frescura para seguir el día',
+    description: 'Una alternativa ligera y fresca para pausas activas, compra rápida y consumo cotidiano.',
     price: 32,
     volume: '250 ml',
-    benefits: ['Frescura', 'Ligereza', 'Practicidad'],
-    moments: ['Dia ligero', 'Pausa activa', 'Compra rapida'],
+    image: '/heltea-product.png',
+    imageAlt: 'Render real de HelTea EnergyMax',
+    benefits: ['Frescura', 'Ligereza', 'Equilibrio'],
+    moments: ['Pausa activa', 'Día ligero', 'Compra rápida'],
     colors: {
-      primary: '#22cfc2',
+      primary: '#20c7b8',
       secondary: '#127a53',
-      accent: '#9af5cd',
+      accent: '#a8f5cd',
       soft: '#e8fff9',
+      dark: '#083a32',
     },
   },
 ];
@@ -69,7 +79,7 @@ export const products: Product[] = [
 export const packs: Pack[] = [
   {
     id: 'pack-energia',
-    name: 'Pack Energia',
+    name: 'Pack Energía',
     detail: '6 Drink2Go para semanas con ritmo intenso.',
     price: 195,
     items: [{ productId: 'drink2go', quantity: 6 }],
@@ -77,14 +87,14 @@ export const packs: Pack[] = [
   {
     id: 'pack-frescura',
     name: 'Pack Frescura',
-    detail: '6 HelTea para pausas frescas y practicas.',
+    detail: '6 HelTea para pausas ligeras y prácticas.',
     price: 178,
     items: [{ productId: 'heltea', quantity: 6 }],
   },
   {
     id: 'pack-energymax',
     name: 'Pack EnergyMax',
-    detail: '3 Drink2Go + 3 HelTea para probar la linea completa.',
+    detail: '3 Drink2Go + 3 HelTea para probar la línea completa.',
     price: 186,
     recommended: true,
     items: [
