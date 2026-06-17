@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleDollarSign,
+  Clock3,
   CreditCard,
   GraduationCap,
   Leaf,
@@ -14,6 +15,7 @@ import {
   PackageCheck,
   Plus,
   Route,
+  Search,
   ShoppingBag,
   Sparkles,
   Store,
@@ -47,6 +49,9 @@ type CheckoutData = {
   payment: string;
 };
 
+const CART_STORAGE_KEY = 'energymax-cart';
+const MAX_CART_QUANTITY = 12;
+
 const initialCheckout: CheckoutData = {
   name: '',
   email: '',
@@ -67,53 +72,145 @@ const navItems = [
 
 const strategy: Array<{ title: string; text: string; metric: string; icon: LucideIcon }> = [
   {
-    title: 'Materia prima Medium',
-    text: 'Equilibrio entre calidad y costo para sostener precios competitivos.',
-    metric: 'balance',
+    title: 'Calidad inteligente',
+    text: 'Materia prima Medium para equilibrar calidad y costos.',
+    metric: '01',
     icon: CircleDollarSign,
   },
   {
-    title: 'Mejora del producto',
-    text: 'Inversión en percepción, empaque y experiencia para aumentar preferencia.',
-    metric: '+valor',
+    title: 'Productos más competitivos',
+    text: 'Inversión para mejorar el valor percibido de Drink2Go y HelTea.',
+    metric: '02',
     icon: BadgeCheck,
   },
   {
     title: 'Recuperación de mercado',
-    text: 'Promociones, paquetes y compra digital para acelerar la recompra.',
-    metric: 'share',
+    text: 'Promociones, visibilidad y nuevas opciones de compra.',
+    metric: '03',
     icon: Target,
   },
   {
-    title: 'Cobertura y compra digital',
-    text: 'Más puntos de venta, entrega simulada y checkout rápido.',
-    metric: 'online',
+    title: 'Más cerca del cliente',
+    text: 'Mayor cobertura mediante canales físicos y compra digital.',
+    metric: '04',
     icon: Route,
   },
 ];
 
 const channels: Array<{ title: string; detail: string; icon: LucideIcon }> = [
   { title: 'Universidades', detail: 'Consumo rápido entre clases.', icon: GraduationCap },
-  { title: 'Gimnasios', detail: 'Energía antes y después de entrenar.', icon: Zap },
   { title: 'Tiendas', detail: 'Disponibilidad cotidiana.', icon: Store },
+  { title: 'Gimnasios', detail: 'Energía antes y después de entrenar.', icon: Zap },
   { title: 'Cafeterías', detail: 'Pausas frescas con HelTea.', icon: Leaf },
   { title: 'Compra en línea', detail: 'Carrito y checkout simulado.', icon: ShoppingBag },
-  { title: 'Entrega local', detail: 'Cobertura práctica para pedidos.', icon: Truck },
+  { title: 'Entrega a domicilio', detail: 'Cobertura práctica para pedidos.', icon: Truck },
 ];
 
-const recommendationOptions: Array<{ label: string; detail: string; productId: ProductId; icon: LucideIcon }> = [
-  { label: 'Necesito concentrarme', detail: 'Estudio, entregas y jornadas largas.', productId: 'drink2go', icon: Target },
-  { label: 'Voy a entrenar', detail: 'Ritmo físico y energía inmediata.', productId: 'drink2go', icon: Zap },
-  { label: 'Quiero algo fresco', detail: 'Pausa ligera sin sentirme pesado.', productId: 'heltea', icon: Leaf },
-  { label: 'Voy de salida', detail: 'Compra rápida para llevar.', productId: 'heltea', icon: ShoppingBag },
+const recommendationOptions: Array<{
+  label: string;
+  detail: string;
+  result: string;
+  productId: ProductId;
+  icon: LucideIcon;
+}> = [
+  {
+    label: 'Necesito concentrarme',
+    detail: 'Enfoque para estudio, tareas y entregas.',
+    result: 'Drink2Go aporta una sensación de energía más intensa para mantener el ritmo.',
+    productId: 'drink2go',
+    icon: Target,
+  },
+  {
+    label: 'Voy a entrenar',
+    detail: 'Impulso para moverte con más decisión.',
+    result: 'Drink2Go acompaña sesiones activas con una personalidad más potente.',
+    productId: 'drink2go',
+    icon: Zap,
+  },
+  {
+    label: 'Tengo una jornada larga',
+    detail: 'Energía práctica para sostener el día.',
+    result: 'Drink2Go es la opción directa para días con muchas actividades.',
+    productId: 'drink2go',
+    icon: Clock3,
+  },
+  {
+    label: 'Quiero algo refrescante y ligero',
+    detail: 'Frescura para una pausa más suave.',
+    result: 'HelTea es la opción ligera para refrescarte sin perder movimiento.',
+    productId: 'heltea',
+    icon: Leaf,
+  },
 ];
 
-function readCart() {
+const clampQuantity = (value: unknown) => {
+  const number = Math.floor(Number(value));
+  if (!Number.isFinite(number)) return 1;
+  return Math.min(MAX_CART_QUANTITY, Math.max(1, number));
+};
+
+function sanitizeCart(): CartItem[] {
   if (typeof window === 'undefined') return [];
+
   try {
-    const stored = window.localStorage.getItem('energymax-cart');
-    return stored ? (JSON.parse(stored) as CartItem[]) : [];
+    const stored = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!stored) return [];
+
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) {
+      window.localStorage.removeItem(CART_STORAGE_KEY);
+      return [];
+    }
+
+    const validVisuals = new Set<ProductId | 'mixed'>(['drink2go', 'heltea', 'mixed']);
+    const validIds = new Set([...products.map((product) => product.id), ...packs.map((pack) => pack.id)]);
+    let changed = false;
+
+    const clean = parsed
+      .map((item) => {
+        if (!item || typeof item !== 'object') {
+          changed = true;
+          return null;
+        }
+
+        const candidate = item as Partial<CartItem>;
+        const quantity = clampQuantity(candidate.quantity);
+        const invalid =
+          typeof candidate.id !== 'string' ||
+          !validIds.has(candidate.id) ||
+          typeof candidate.title !== 'string' ||
+          typeof candidate.subtitle !== 'string' ||
+          typeof candidate.price !== 'number' ||
+          !Number.isFinite(candidate.price) ||
+          typeof candidate.visual !== 'string' ||
+          !validVisuals.has(candidate.visual as ProductId | 'mixed');
+
+        if (invalid) {
+          changed = true;
+          return null;
+        }
+
+        if (quantity !== candidate.quantity) changed = true;
+
+        return {
+          id: candidate.id,
+          title: candidate.title,
+          subtitle: candidate.subtitle,
+          price: candidate.price,
+          quantity,
+          visual: candidate.visual as ProductId | 'mixed',
+        };
+      })
+      .filter(Boolean) as CartItem[];
+
+    if (changed) {
+      if (clean.length) window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(clean));
+      else window.localStorage.removeItem(CART_STORAGE_KEY);
+    }
+
+    return clean;
   } catch {
+    window.localStorage.removeItem(CART_STORAGE_KEY);
     return [];
   }
 }
@@ -121,7 +218,7 @@ function readCart() {
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [cart, setCart] = useState<CartItem[]>(readCart);
+  const [cart, setCart] = useState<CartItem[]>(sanitizeCart);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [recommendation, setRecommendation] = useState(0);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -130,18 +227,23 @@ function App() {
   const [order, setOrder] = useState<{ id: string; items: CartItem[]; total: number } | null>(null);
 
   useEffect(() => {
-    window.localStorage.setItem('energymax-cart', JSON.stringify(cart));
+    if (cart.length) window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    else window.localStorage.removeItem(CART_STORAGE_KEY);
   }, [cart]);
 
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
   const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
+  const energyPack = packs.find((pack) => pack.id === 'pack-energymax')!;
 
   const addItem = (item: CartItem) => {
+    const normalized = { ...item, quantity: clampQuantity(item.quantity) };
     setCart((current) => {
-      const found = current.find((entry) => entry.id === item.id);
-      if (!found) return [...current, item];
+      const found = current.find((entry) => entry.id === normalized.id);
+      if (!found) return [...current, normalized];
       return current.map((entry) =>
-        entry.id === item.id ? { ...entry, quantity: entry.quantity + item.quantity } : entry,
+        entry.id === normalized.id
+          ? { ...entry, quantity: Math.min(MAX_CART_QUANTITY, entry.quantity + normalized.quantity) }
+          : entry,
       );
     });
     setCartOpen(true);
@@ -172,7 +274,10 @@ function App() {
   const updateQuantity = (id: string, change: number) => {
     setCart((current) =>
       current
-        .map((item) => (item.id === id ? { ...item, quantity: Math.max(0, item.quantity + change) } : item))
+        .map((item) => {
+          if (item.id !== id) return item;
+          return { ...item, quantity: Math.min(MAX_CART_QUANTITY, Math.max(0, item.quantity + change)) };
+        })
         .filter((item) => item.quantity > 0),
     );
   };
@@ -194,7 +299,7 @@ function App() {
       <Header cartCount={cartCount} menuOpen={menuOpen} setMenuOpen={setMenuOpen} onCart={() => setCartOpen(true)} />
 
       <main>
-        <Hero onAdd={addProduct} />
+        <Hero onAdd={addProduct} onPack={() => addPack(energyPack)} />
         <CompanySection />
         <StrategySection />
         <ProductsSection onAdd={addProduct} onDetail={setSelectedProduct} />
@@ -206,7 +311,7 @@ function App() {
           onDetail={setSelectedProduct}
         />
         <CoverageSection />
-        <FinalCta onAdd={addProduct} onPack={() => addPack(packs.find((pack) => pack.id === 'pack-energymax')!)} />
+        <FinalCta onAdd={addProduct} onPack={() => addPack(energyPack)} />
       </main>
 
       <Footer />
@@ -223,6 +328,7 @@ function App() {
             onInc={(id) => updateQuantity(id, 1)}
             onDec={(id) => updateQuantity(id, -1)}
             onRemove={(id) => setCart((current) => current.filter((item) => item.id !== id))}
+            onClear={() => setCart([])}
             onCheckout={() => {
               setCartOpen(false);
               setCheckoutOpen(true);
@@ -259,10 +365,10 @@ function Header({
   onCart: () => void;
 }) {
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-ink/88 text-white backdrop-blur-2xl">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-ink/92 text-white backdrop-blur-2xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <a href="#inicio" className="flex items-center gap-3 font-black" onClick={() => setMenuOpen(false)}>
-          <img src="/energymax-icon.svg" alt="" className="h-11 w-11 rounded-2xl shadow-glow" />
+        <a href="#inicio" className="flex min-w-0 items-center gap-3 font-black" onClick={() => setMenuOpen(false)}>
+          <img src="/energymax-icon.svg" alt="" className="brand-mark h-11 w-11" />
           <span className="tracking-wide">EnergyMax</span>
         </a>
 
@@ -317,41 +423,36 @@ function Header({
   );
 }
 
-function Hero({ onAdd }: { onAdd: (product: Product) => void }) {
+function Hero({ onAdd, onPack }: { onAdd: (product: Product) => void; onPack: () => void }) {
   return (
-    <section id="inicio" className="hero-premium relative overflow-hidden pt-24 text-white">
+    <section id="inicio" className="hero-premium relative overflow-hidden pt-28 text-white">
       <Container>
-        <div className="grid min-h-[760px] items-center gap-8 py-12 lg:grid-cols-[0.82fr_1.18fr] lg:py-16">
-          <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-black text-white/90 backdrop-blur-xl">
-              <Sparkles size={16} aria-hidden="true" />
-              Línea premium EnergyMax
-            </span>
-            <h1 className="mt-7 max-w-3xl text-5xl font-black leading-[0.95] sm:text-7xl">
+        <div className="hero-layout grid min-h-[calc(100vh-3rem)] items-center gap-10 py-8 lg:grid-cols-[0.86fr_1.14fr] lg:py-12">
+          <motion.div className="hero-copy" initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+            <h1 className="max-w-3xl text-5xl font-black leading-[0.96] sm:text-6xl xl:text-7xl">
               Activa tu día con EnergyMax
             </h1>
-            <p className="mt-5 max-w-2xl text-xl font-bold text-white/76 sm:text-2xl">
+            <p className="mt-5 max-w-2xl text-xl font-bold text-white/82 sm:text-2xl">
               Energía y frescura para cada momento.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <p className="mt-4 max-w-xl text-base font-semibold leading-7 text-white/66 sm:text-lg">
+              Dos bebidas creadas para acompañar distintos ritmos, actividades y momentos del día.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <a href="#productos" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-black text-ink shadow-xl shadow-black/20">
                 Comprar ahora <ChevronRight size={18} aria-hidden="true" />
               </a>
               <a href="#productos" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/24 bg-white/8 px-6 py-4 font-black backdrop-blur-xl">
                 Descubrir productos <ArrowRight size={18} aria-hidden="true" />
               </a>
+              <button type="button" onClick={onPack} className="inline-flex items-center justify-center gap-2 rounded-full bg-teal px-6 py-4 font-black text-ink">
+                Probar Pack EnergyMax <ShoppingBag size={18} aria-hidden="true" />
+              </button>
             </div>
-            <div className="mt-10 grid max-w-xl grid-cols-3 gap-3">
-              {[
-                ['2', 'bebidas'],
-                ['Medium', 'materia prima'],
-                ['digital', 'compra'],
-              ].map(([value, label]) => (
-                <div key={label} className="rounded-3xl border border-white/12 bg-white/8 p-4 backdrop-blur-xl">
-                  <strong className="block text-2xl">{value}</strong>
-                  <span className="text-xs font-bold uppercase text-white/58">{label}</span>
-                </div>
-              ))}
+            <div className="hero-price-row">
+              <span>Drink2Go {formatPrice(products[0].price)}</span>
+              <span>HelTea {formatPrice(products[1].price)}</span>
+              <span>Pack EnergyMax {formatPrice(packs[2].price)}</span>
             </div>
           </motion.div>
 
@@ -370,15 +471,7 @@ function Hero({ onAdd }: { onAdd: (product: Product) => void }) {
                 decoding="async"
               />
             </div>
-            <div className="hero-card hero-card-left">
-              <strong>Más vendido</strong>
-              <span>{formatPrice(products[0].price)}</span>
-            </div>
-            <div className="hero-card hero-card-right">
-              <strong>Opción ligera</strong>
-              <span>{formatPrice(products[1].price)}</span>
-            </div>
-            <div className="hero-strip">
+            <div className="hero-strip" aria-label="Compra rápida">
               <button type="button" onClick={() => onAdd(products[0])} className="rounded-full bg-white px-5 py-3 font-black text-ink">
                 Comprar Drink2Go
               </button>
@@ -395,26 +488,26 @@ function Hero({ onAdd }: { onAdd: (product: Product) => void }) {
 
 function CompanySection() {
   return (
-    <section id="empresa" className="bg-white py-20 sm:py-24">
+    <section id="empresa" className="bg-white py-16 sm:py-20">
       <Container>
         <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
-          <div>
-            <SectionHeader eyebrow="Presentación de la empresa" title="Una marca de bebidas pensada para comprar rápido y verse real." />
+          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <SectionHeader eyebrow="Presentación de la empresa" title="Una marca de bebidas pensada para verse real y comprarse fácil." />
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               <VisualPoint icon={UserRound} title="Público objetivo" text="Estudiantes, jóvenes adultos, deportistas y personas con días activos." />
               <VisualPoint icon={Sparkles} title="Identidad de marca" text="Visual moderna, energética, fresca y comercial." />
               <VisualPoint icon={ShoppingBag} title="Compra digital" text="Catálogo, recomendador, carrito y checkout simulado." />
               <VisualPoint icon={PackageCheck} title="Oferta clara" text="Drink2Go, HelTea y paquetes promocionales." />
             </div>
-          </div>
-          <div className="brand-showcase">
+          </motion.div>
+          <motion.div className="brand-showcase" initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <img src="/energymax-icon.svg" alt="EnergyMax" className="brand-showcase-logo" />
             <DuoVisual />
             <div className="brand-showcase-copy">
               <span>EnergyMax</span>
               <strong>Dos momentos de consumo, una misma familia visual.</strong>
             </div>
-          </div>
+          </motion.div>
         </div>
       </Container>
     </section>
@@ -423,26 +516,26 @@ function CompanySection() {
 
 function StrategySection() {
   return (
-    <section id="estrategia" className="strategy-bg py-20 text-white sm:py-24">
+    <section id="estrategia" className="strategy-bg py-16 text-white sm:py-20">
       <Container>
-        <div className="grid gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-center">
-          <div>
-            <SectionHeader eyebrow="Nuestra estrategia EnergyMax" title="Decisiones del simulador convertidas en una propuesta vendible." light />
+        <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
+          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <SectionHeader eyebrow="Nuestra estrategia EnergyMax" title="Del simulador a una propuesta comercial más fuerte." light />
             <p className="mt-5 max-w-xl text-lg font-semibold text-white/68">
-              Menos teoría en pantalla y más evidencia visual: precio, producto, cobertura y compra digital trabajando juntos.
+              Calidad, producto, promociones y cobertura conectados en una misma ruta de recuperación.
             </p>
             <div className="mt-8 rounded-[2rem] border border-white/12 bg-white/8 p-5 backdrop-blur-xl">
               <div className="grid grid-cols-[110px_1fr] items-center gap-5">
                 <DuoVisual compact />
                 <div>
                   <p className="text-sm font-black uppercase text-teal">Simulador</p>
-                  <h3 className="mt-1 text-2xl font-black">Recuperar mercado sin perder margen.</h3>
-                  <p className="mt-2 text-sm text-white/62">Medium + mejora de producto + promociones + cobertura digital.</p>
+                  <h3 className="mt-1 text-2xl font-black">Medium + mejora + promoción + compra digital.</h3>
+                  <p className="mt-2 text-sm text-white/62">Menos explicación larga, más lectura visual.</p>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          </motion.div>
+          <div className="strategy-progress">
             {strategy.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -454,14 +547,17 @@ function StrategySection() {
                   viewport={{ once: true, margin: '-80px' }}
                   transition={{ delay: index * 0.06 }}
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="strategy-number">{item.metric}</div>
+                  <div className="flex items-start gap-4">
                     <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-ink">
                       <Icon size={22} aria-hidden="true" />
                     </span>
-                    <strong className="rounded-full bg-teal/18 px-3 py-1 text-xs uppercase text-teal">{item.metric}</strong>
+                    <div>
+                      <h3 className="text-xl font-black">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-white/66">{item.text}</p>
+                    </div>
                   </div>
-                  <h3 className="mt-6 text-2xl font-black">{item.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-white/66">{item.text}</p>
+                  {index < strategy.length - 1 && <ArrowRight className="strategy-arrow" size={19} aria-hidden="true" />}
                 </motion.article>
               );
             })}
@@ -480,19 +576,18 @@ function ProductsSection({
   onDetail: (product: Product) => void;
 }) {
   return (
-    <section id="productos" className="bg-white py-20 sm:py-24">
+    <section id="productos" className="bg-white py-16 sm:py-20">
       <Container>
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-          <SectionHeader eyebrow="Catálogo" title="Drink2Go y HelTea listos para convertir visitas en compras." />
-          <p className="max-w-md text-sm font-bold text-slate-500">
-            Precios ilustrativos y experiencia de compra simulada para un prototipo universitario premium.
-          </p>
+          <SectionHeader eyebrow="Catálogo" title="Drink2Go y HelTea listos para comprar." />
+          <p className="max-w-md text-sm font-bold text-slate-500">Precios claros, productos protagonistas y compra simulada.</p>
         </div>
         <div className="mt-10 grid gap-6 lg:grid-cols-2">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} onAdd={onAdd} onDetail={onDetail} />
           ))}
         </div>
+        <p className="mt-5 text-sm font-bold text-slate-500">Precios ilustrativos para fines académicos.</p>
       </Container>
     </section>
   );
@@ -527,7 +622,7 @@ function ProductCard({
             <h3 className="mt-2 text-4xl font-black">{product.name}</h3>
             <p className="mt-2 text-lg font-bold text-slate-600">{product.tagline}</p>
           </div>
-          <strong className="w-max rounded-2xl bg-slate-100 px-4 py-3 text-2xl">{formatPrice(product.price)}</strong>
+          <strong className="price-chip">{formatPrice(product.price)}</strong>
         </div>
         <p className="mt-5 text-slate-600">{product.description}</p>
         <div className="mt-5 flex flex-wrap gap-2">
@@ -553,10 +648,10 @@ function ProductCard({
 
 function PacksSection({ onAdd }: { onAdd: (pack: Pack) => void }) {
   return (
-    <section className="bg-mist py-20 sm:py-24">
+    <section className="bg-mist py-16 sm:py-20">
       <Container>
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-          <SectionHeader eyebrow="Paquetes promocionales" title="Promos con apariencia de campaña real." />
+          <SectionHeader eyebrow="Paquetes promocionales" title="Promos con presentación de campaña real." />
           <div className="rounded-full bg-white px-5 py-3 text-sm font-black text-electric shadow-sm">
             Precios ilustrativos
           </div>
@@ -566,6 +661,7 @@ function PacksSection({ onAdd }: { onAdd: (pack: Pack) => void }) {
             <PackCard key={pack.id} pack={pack} onAdd={onAdd} />
           ))}
         </div>
+        <p className="mt-5 text-sm font-bold text-slate-500">Precios ilustrativos para fines académicos.</p>
       </Container>
     </section>
   );
@@ -579,17 +675,17 @@ function PackCard({ pack, onAdd }: { pack: Pack; onAdd: (pack: Pack) => void }) 
       whileHover={{ y: -7 }}
       transition={{ type: 'spring', stiffness: 260, damping: 24 }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <span className={`rounded-full px-3 py-2 text-xs font-black ${featured ? 'bg-teal text-ink' : 'bg-white text-electric'}`}>
           {featured ? 'Recomendado' : 'Promoción'}
         </span>
         <strong className={featured ? 'text-teal' : 'text-electric'}>{formatPrice(pack.price)}</strong>
       </div>
-      <div className="my-7 grid min-h-[210px] place-items-center">
+      <div className="my-7 grid min-h-[220px] place-items-center">
         <PackVisual pack={pack} />
       </div>
       <h3 className="text-3xl font-black">{pack.name}</h3>
-      <p className={`mt-3 min-h-[52px] ${featured ? 'text-white/68' : 'text-slate-600'}`}>{pack.detail}</p>
+      <p className={`mt-3 min-h-[52px] ${featured ? 'text-white/70' : 'text-slate-600'}`}>{pack.detail}</p>
       <button type="button" onClick={() => onAdd(pack)} className={`mt-6 w-full rounded-full px-5 py-4 font-black ${featured ? 'bg-white text-ink' : 'bg-ink text-white'}`}>
         Agregar paquete
       </button>
@@ -611,11 +707,11 @@ function RecommenderSection({
   const selectedOption = recommendationOptions[recommendation] ?? recommendationOptions[0];
   const product = getProduct(selectedOption.productId);
   return (
-    <section id="recomendador" className="bg-white py-20 sm:py-24">
+    <section id="recomendador" className="bg-white py-16 sm:py-20">
       <Container>
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
           <div>
-            <SectionHeader eyebrow="Recomendador" title="Elige tu momento y EnergyMax responde." />
+            <SectionHeader eyebrow="Recomendador" title="¿Qué EnergyMax necesitas hoy?" />
             <div className="mt-8 grid gap-3">
               {recommendationOptions.map((option, index) => {
                 const Icon = option.icon;
@@ -641,7 +737,7 @@ function RecommenderSection({
           </div>
 
           <motion.article
-            key={product.id}
+            key={`${product.id}-${recommendation}`}
             className="recommendation-card"
             style={{ '--product-primary': product.colors.primary, '--product-secondary': product.colors.secondary, '--product-soft': product.colors.soft } as CSSProperties}
             initial={{ opacity: 0, y: 18 }}
@@ -656,8 +752,11 @@ function RecommenderSection({
             <div className="recommendation-copy">
               <span className="rounded-full bg-white/18 px-4 py-2 text-sm font-black text-white">Recomendación</span>
               <h3 className="mt-5 text-5xl font-black text-white">{product.name}</h3>
-              <p className="mt-3 text-xl font-bold text-white/78">{product.tagline}</p>
-              <p className="mt-5 text-white/66">{product.description}</p>
+              <p className="mt-3 text-xl font-bold text-white/78">{selectedOption.result}</p>
+              <div className="mt-5 flex items-center gap-3">
+                <strong className="rounded-2xl bg-white px-4 py-3 text-xl text-ink">{formatPrice(product.price)}</strong>
+                <span className="text-sm font-bold text-white/62">{product.volume}</span>
+              </div>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <button type="button" onClick={() => onAdd(product)} className="rounded-full bg-white px-5 py-3 font-black text-ink">
                   Agregar al carrito
@@ -676,28 +775,39 @@ function RecommenderSection({
 
 function CoverageSection() {
   return (
-    <section id="cobertura" className="bg-ink py-20 text-white sm:py-24">
+    <section id="cobertura" className="coverage-section bg-ink py-16 text-white sm:py-20">
       <Container>
-        <div className="grid gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
-          <div>
-            <SectionHeader eyebrow="Cobertura y distribución" title="EnergyMax cerca del cliente y listo para compra digital." light />
-            <p className="mt-5 text-white/66">La cobertura mejora con puntos físicos, entrega local y un flujo de compra simulado que reduce fricción.</p>
-            <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-white px-5 py-3 font-black text-ink">
-              <MapPin size={18} />
-              Cobertura en crecimiento
+        <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
+          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <SectionHeader eyebrow="Cobertura y distribución" title="EnergyMax cada vez más cerca de ti." light />
+            <p className="mt-5 text-white/66">Una red ilustrativa de puntos físicos y compra digital para acercar las bebidas al cliente.</p>
+            <button type="button" className="mt-8 inline-flex items-center gap-3 rounded-full bg-white px-5 py-3 font-black text-ink">
+              <Search size={18} />
+              Buscar punto de venta
+            </button>
+          </motion.div>
+          <div className="coverage-network">
+            <div className="coverage-center">
+              <img src="/energymax-icon.svg" alt="" />
+              <strong>EnergyMax</strong>
             </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {channels.map((channel) => {
+            {channels.map((channel, index) => {
               const Icon = channel.icon;
               return (
-                <article key={channel.title} className="coverage-card">
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-teal text-ink">
-                    <Icon size={21} aria-hidden="true" />
+                <motion.article
+                  key={channel.title}
+                  className={`coverage-card coverage-node coverage-node-${index + 1}`}
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.04 }}
+                >
+                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-teal text-ink">
+                    <Icon size={20} aria-hidden="true" />
                   </span>
-                  <h3 className="mt-5 text-xl font-black">{channel.title}</h3>
-                  <p className="mt-2 text-sm text-white/62">{channel.detail}</p>
-                </article>
+                  <h3 className="mt-4 text-lg font-black">{channel.title}</h3>
+                  <p className="mt-1 text-xs text-white/62">{channel.detail}</p>
+                </motion.article>
               );
             })}
           </div>
@@ -709,14 +819,14 @@ function CoverageSection() {
 
 function FinalCta({ onAdd, onPack }: { onAdd: (product: Product) => void; onPack: () => void }) {
   return (
-    <section className="final-cta overflow-hidden py-20 text-white sm:py-24">
+    <section className="final-cta overflow-hidden py-16 text-white sm:py-20">
       <Container>
-        <div className="grid items-center gap-8 lg:grid-cols-[1fr_1fr]">
-          <div>
-            <p className="text-sm font-black uppercase text-teal">Compra simulada</p>
-            <h2 className="mt-3 max-w-3xl text-5xl font-black leading-tight sm:text-6xl">
+        <div className="grid items-center gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+          <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <h2 className="max-w-3xl text-5xl font-black leading-tight sm:text-6xl">
               Dos bebidas. Dos momentos. Una misma energía.
             </h2>
+            <p className="mt-4 text-xl font-bold text-white/70">Elige cómo activar tu día.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button type="button" onClick={() => onAdd(products[0])} className="rounded-full bg-white px-6 py-4 font-black text-ink">
                 Comprar Drink2Go
@@ -728,10 +838,10 @@ function FinalCta({ onAdd, onPack }: { onAdd: (product: Product) => void; onPack
                 Probar Pack EnergyMax
               </button>
             </div>
-          </div>
-          <div className="final-cta-visual">
-            <DuoVisual />
-          </div>
+          </motion.div>
+          <motion.div className="final-cta-visual" initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <img src="/energymax-hero.png" alt="Drink2Go y HelTea en campaña EnergyMax" className="final-hero-image" loading="lazy" decoding="async" />
+          </motion.div>
         </div>
       </Container>
     </section>
@@ -816,6 +926,7 @@ function CartDrawer({
   onInc,
   onDec,
   onRemove,
+  onClear,
   onCheckout,
 }: {
   cart: CartItem[];
@@ -824,6 +935,7 @@ function CartDrawer({
   onInc: (id: string) => void;
   onDec: (id: string) => void;
   onRemove: (id: string) => void;
+  onClear: () => void;
   onCheckout: () => void;
 }) {
   return (
@@ -870,7 +982,13 @@ function CartDrawer({
                         <Minus size={14} />
                       </button>
                       <strong className="w-6 text-center">{item.quantity}</strong>
-                      <button type="button" onClick={() => onInc(item.id)} className="grid h-8 w-8 place-items-center rounded-full bg-white" aria-label={`Aumentar ${item.title}`}>
+                      <button
+                        type="button"
+                        onClick={() => onInc(item.id)}
+                        disabled={item.quantity >= MAX_CART_QUANTITY}
+                        className="grid h-8 w-8 place-items-center rounded-full bg-white disabled:opacity-35"
+                        aria-label={`Aumentar ${item.title}`}
+                      >
                         <Plus size={14} />
                       </button>
                     </div>
@@ -887,9 +1005,14 @@ function CartDrawer({
           <span>Total</span>
           <span>{formatPrice(subtotal)}</span>
         </div>
-        <button type="button" onClick={onCheckout} disabled={cart.length === 0} className="mt-5 w-full rounded-full bg-ink px-5 py-4 font-black text-white disabled:bg-slate-300">
-          Continuar compra
-        </button>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <button type="button" onClick={onClear} disabled={cart.length === 0} className="rounded-full bg-white px-5 py-4 font-black text-ink disabled:opacity-45">
+            Vaciar carrito
+          </button>
+          <button type="button" onClick={onCheckout} disabled={cart.length === 0} className="rounded-full bg-ink px-5 py-4 font-black text-white disabled:bg-slate-300">
+            Continuar compra
+          </button>
+        </div>
       </div>
     </motion.aside>
   );
@@ -1082,7 +1205,14 @@ function PackVisual({ pack }: { pack: Pack }) {
 }
 
 function CartVisual({ visual, small = false }: { visual: ProductId | 'mixed'; small?: boolean }) {
-  if (visual === 'mixed') return <DuoVisual compact />;
+  if (visual === 'mixed') {
+    return (
+      <div className={small ? 'cart-mix-small' : 'cart-mix'} aria-hidden="true">
+        <img src={products[0].image} alt="" />
+        <img src={products[1].image} alt="" />
+      </div>
+    );
+  }
   const product = getProduct(visual);
   return <img src={product.image} alt="" className={small ? 'cart-image-small' : 'cart-image'} loading="lazy" decoding="async" />;
 }
@@ -1106,7 +1236,13 @@ function QuantityControl({ value, setValue }: { value: number; setValue: (value:
         <Minus size={16} />
       </button>
       <strong className="w-8 text-center">{value}</strong>
-      <button type="button" onClick={() => setValue(value + 1)} className="grid h-10 w-10 place-items-center rounded-full bg-white" aria-label="Aumentar cantidad">
+      <button
+        type="button"
+        onClick={() => setValue(Math.min(MAX_CART_QUANTITY, value + 1))}
+        disabled={value >= MAX_CART_QUANTITY}
+        className="grid h-10 w-10 place-items-center rounded-full bg-white disabled:opacity-35"
+        aria-label="Aumentar cantidad"
+      >
         <Plus size={16} />
       </button>
     </div>

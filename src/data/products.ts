@@ -37,14 +37,14 @@ export const products: Product[] = [
     name: 'Drink2Go',
     category: 'Bebida energética',
     badge: 'Más vendido',
-    tagline: 'Energía que sigue tu ritmo',
-    description: 'Para estudio, entrenamiento y días largos. Sabor intenso, formato práctico y precio competitivo.',
+    tagline: 'La energía que sigue tu ritmo',
+    description: 'Para concentración, entrenamiento y jornadas largas. Sabor intenso, formato práctico y precio competitivo.',
     price: 35,
     volume: '250 ml',
     image: '/drink2go-product.png',
     imageAlt: 'Render real de Drink2Go EnergyMax',
-    benefits: ['Energía', 'Enfoque', 'Ritmo activo'],
-    moments: ['Estudio', 'Entrenamiento', 'Jornada larga'],
+    benefits: ['Energía', 'Concentración', 'Rendimiento'],
+    moments: ['Concentración', 'Entrenamiento', 'Jornada larga'],
     colors: {
       primary: '#2378ff',
       secondary: '#111d4f',
@@ -58,13 +58,13 @@ export const products: Product[] = [
     name: 'HelTea',
     category: 'Bebida refrescante a base de té',
     badge: 'Opción ligera',
-    tagline: 'Frescura para seguir el día',
-    description: 'Una alternativa ligera y fresca para pausas activas, compra rápida y consumo cotidiano.',
+    tagline: 'Actívate de una forma más ligera',
+    description: 'Una alternativa fresca y ligera para pausas activas, compra rápida y consumo cotidiano.',
     price: 32,
     volume: '250 ml',
     image: '/heltea-product.png',
     imageAlt: 'Render real de HelTea EnergyMax',
-    benefits: ['Frescura', 'Ligereza', 'Equilibrio'],
+    benefits: ['Frescura', 'Ligereza', 'Bienestar'],
     moments: ['Pausa activa', 'Día ligero', 'Compra rápida'],
     colors: {
       primary: '#20c7b8',
@@ -95,7 +95,7 @@ export const packs: Pack[] = [
     id: 'pack-energymax',
     name: 'Pack EnergyMax',
     detail: '3 Drink2Go + 3 HelTea para probar la línea completa.',
-    price: 186,
+    price: 189,
     recommended: true,
     items: [
       { productId: 'drink2go', quantity: 3 },
@@ -104,11 +104,6 @@ export const packs: Pack[] = [
   },
 ];
 
-export const formatPrice = (value: number) =>
-  new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    maximumFractionDigits: 0,
-  }).format(value);
+export const formatPrice = (value: number) => `$${value.toLocaleString('es-MX', { maximumFractionDigits: 0 })} MXN`;
 
 export const getProduct = (id: ProductId) => products.find((product) => product.id === id)!;
