@@ -694,7 +694,7 @@ function CompanySection() {
           <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <SectionHeader eyebrow="Presentación de la empresa" title="Una marca creada para moverse contigo" />
             <p className="company-intro">
-              EnergyMax ofrece dos bebidas diseñadas para acompañar diferentes necesidades y momentos del día.
+              EnergyMax acompaña distintos ritmos, actividades y momentos del día.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {companyCards.map((card) => (
@@ -936,31 +936,46 @@ function ProductComparison({ onAdd }: { onAdd: (product: Product) => void }) {
       <Container>
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <SectionHeader eyebrow="Comparador" title="¿Cuál bebida va contigo?" />
-          <p className="max-w-md text-sm font-bold text-slate-500">Una comparación rápida para decidir por momento, sensación y precio ilustrativo.</p>
+          <p className="max-w-md text-base font-bold text-slate-600">Dos perfiles claros para elegir por energía, frescura y momento de consumo.</p>
         </div>
-        <div className="comparison-grid mt-10">
-          <article className="comparison-card comparison-card-energy">
-            <ProductVisual product={products[0]} className="comparison-product" />
-            <h3>Drink2Go</h3>
-            <button type="button" onClick={() => onAdd(products[0])}>
-              Elegir Drink2Go
-            </button>
+        <div className="comparison-showdown mt-8">
+          <article className="comparison-profile comparison-profile-drink">
+            <div className="comparison-media">
+              <ProductVisual product={products[0]} className="comparison-product" />
+            </div>
+            <div className="comparison-copy">
+              <span>Perfil energético</span>
+              <h3>Drink2Go</h3>
+              <ul>
+                <li>Estudio y entrenamiento</li>
+                <li>Intensidad y movimiento</li>
+                <li>Precio ilustrativo: $35 MXN</li>
+              </ul>
+              <button type="button" onClick={() => onAdd(products[0])}>
+                Elegir Drink2Go
+              </button>
+            </div>
           </article>
-          <div className="comparison-bar" aria-label="Comparación Drink2Go y HelTea">
-            {comparisonRows.map((row) => (
-              <div key={row.label} className="comparison-row">
-                <span>{row.drink2go}</span>
-                <strong>{row.label}</strong>
-                <span>{row.heltea}</span>
-              </div>
-            ))}
+          <div className="comparison-divider" aria-hidden="true">
+            <span>VS</span>
+            <i />
           </div>
-          <article className="comparison-card comparison-card-fresh">
-            <ProductVisual product={products[1]} className="comparison-product" />
-            <h3>HelTea</h3>
-            <button type="button" onClick={() => onAdd(products[1])}>
-              Elegir HelTea
-            </button>
+          <article className="comparison-profile comparison-profile-tea">
+            <div className="comparison-media">
+              <ProductVisual product={products[1]} className="comparison-product" />
+            </div>
+            <div className="comparison-copy">
+              <span>Perfil refrescante</span>
+              <h3>HelTea</h3>
+              <ul>
+                <li>Día ligero</li>
+                <li>Frescura y equilibrio</li>
+                <li>Precio ilustrativo: $32 MXN</li>
+              </ul>
+              <button type="button" onClick={() => onAdd(products[1])}>
+                Elegir HelTea
+              </button>
+            </div>
           </article>
         </div>
       </Container>
@@ -1179,7 +1194,7 @@ function TestimonialsSection() {
           <SectionHeader eyebrow="Opiniones de demostración" title="Así se viviría la experiencia EnergyMax" />
           <p className="max-w-md text-sm font-bold text-slate-500">Opiniones de demostración para el prototipo académico.</p>
         </div>
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+        <div className="testimonial-track mt-10">
           {testimonials.map((testimonial) => (
             <motion.article key={testimonial.name} className="testimonial-card" whileHover={{ y: -5 }}>
               <div className="testimonial-avatar" aria-hidden="true">
@@ -1219,9 +1234,9 @@ function CoverageSection() {
           <div className="coverage-network">
             <div className="coverage-center">
               <span className="coverage-center-mark">
-                <Zap size={36} aria-hidden="true" />
+                <ShoppingBag size={36} aria-hidden="true" />
               </span>
-              <strong>EnergyMax</strong>
+              <strong>Compra en línea</strong>
             </div>
             {channels.map((channel, index) => {
               const Icon = channel.icon;
@@ -1709,7 +1724,7 @@ function ProductVisual({ product, className = '' }: { product: Product; classNam
     <motion.img
       src={product.image}
       alt={product.imageAlt}
-      className={`product-render ${className}`}
+      className={`product-render product-render-${product.id} ${className}`}
       loading="lazy"
       decoding="async"
       initial={{ opacity: 0, y: 16 }}
@@ -1723,8 +1738,8 @@ function ProductVisual({ product, className = '' }: { product: Product; classNam
 function DuoVisual({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`duo-visual ${compact ? 'duo-visual-compact' : ''}`} aria-label="Drink2Go y HelTea" role="img">
-      <img src={products[0].image} alt="" className="duo-product duo-product-left" loading="lazy" decoding="async" />
-      <img src={products[1].image} alt="" className="duo-product duo-product-right" loading="lazy" decoding="async" />
+      <img src={products[0].image} alt="" className="duo-product duo-product-left duo-product-drink2go" loading="lazy" decoding="async" />
+      <img src={products[1].image} alt="" className="duo-product duo-product-right duo-product-heltea" loading="lazy" decoding="async" />
     </div>
   );
 }
@@ -1837,11 +1852,32 @@ function Container({ children }: { children: ReactNode }) {
 
 function Footer() {
   return (
-    <footer className="bg-white py-10">
+    <footer className="footer-premium bg-white py-10">
       <Container>
-        <div className="flex flex-col justify-between gap-3 border-t border-slate-200 pt-8 text-sm text-slate-600 sm:flex-row">
-          <strong className="text-ink">EnergyMax</strong>
-          <span>Prototipo académico. Precios ilustrativos. No procesa pagos reales.</span>
+        <div className="footer-grid">
+          <div className="footer-brand">
+            <a href="#inicio" className="brand-link flex min-w-0 items-center font-black">
+              <img src="/energymax-icon.svg" alt="" className="brand-mark footer-mark" />
+              <span className="brand-word tracking-wide">EnergyMax</span>
+            </a>
+            <p>Prototipo académico. No procesa pagos reales.</p>
+          </div>
+          <nav className="footer-nav" aria-label="Navegación inferior">
+            <a href="#productos">Productos</a>
+            <a href="#estrategia">Estrategia</a>
+            <a href="#cobertura">Cobertura</a>
+          </nav>
+          <div className="footer-social" aria-label="Redes simuladas">
+            <span>Redes simuladas</span>
+            <div>
+              <span>IG</span>
+              <span>TT</span>
+              <span>WA</span>
+            </div>
+          </div>
+          <a href="#inicio" className="footer-top">
+            Volver arriba <ArrowRight size={16} aria-hidden="true" />
+          </a>
         </div>
       </Container>
     </footer>
