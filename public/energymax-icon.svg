@@ -1,22 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="EnergyMax">
   <defs>
-    <linearGradient id="markBg" x1="16" y1="12" x2="80" y2="84" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0c1630"/>
+    <linearGradient id="emx-bg" x1="14" y1="10" x2="84" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0c1f45"/>
       <stop offset=".52" stop-color="#07111f"/>
-      <stop offset="1" stop-color="#0d2f39"/>
+      <stop offset="1" stop-color="#0b3f3d"/>
     </linearGradient>
-    <linearGradient id="bolt" x1="32" y1="17" x2="68" y2="78" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#f6fbff"/>
-      <stop offset=".22" stop-color="#37b7ff"/>
-      <stop offset=".68" stop-color="#22cfc2"/>
+    <linearGradient id="emx-bolt" x1="28" y1="15" x2="67" y2="82" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fbff"/>
+      <stop offset=".22" stop-color="#35b8ff"/>
+      <stop offset=".62" stop-color="#22cfc2"/>
       <stop offset="1" stop-color="#7c3cff"/>
     </linearGradient>
-    <filter id="softGlow" x="14" y="10" width="68" height="78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#22cfc2" flood-opacity=".28"/>
+    <filter id="emx-glow" x="8" y="8" width="80" height="80" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="0" stdDeviation="3.6" flood-color="#22cfc2" flood-opacity=".26"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#2378ff" flood-opacity=".18"/>
     </filter>
   </defs>
-  <rect x="6" y="6" width="84" height="84" rx="25" fill="url(#markBg)"/>
-  <path d="M70 18 46 44h18L26 80l20-30H30l25-32h15Z" fill="url(#bolt)" filter="url(#softGlow)"/>
-  <path d="M57 19 42 43h13L31 72l15-25H34l21-28h2Z" fill="#ffffff" opacity=".22"/>
-  <path d="M24 69 52 44H39l18-26" fill="none" stroke="#ffffff" stroke-opacity=".18" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="6" y="6" width="84" height="84" rx="28" fill="url(#emx-bg)"/>
+  <rect x="10" y="10" width="76" height="76" rx="24" fill="none" stroke="#fff" stroke-opacity=".1"/>
+  <path
+    d="M61.6 14.5 33.4 49h16.9L34.6 81.5 66.4 44H49.8l11.8-29.5Z"
+    fill="url(#emx-bolt)"
+    filter="url(#emx-glow)"
+  />
+  <path
+    d="M57.4 20.8 41.7 45.3h13.6L39.7 70.2l20.6-29.3H47.8l9.6-20.1Z"
+    fill="#ffffff"
+    opacity=".24"
+  />
+  <path
+    d="M31 63.5 46.6 48H35.2l15.2-22.8"
+    fill="none"
+    stroke="#ffffff"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-opacity=".22"
+    stroke-width="3"
+  />
 </svg>
