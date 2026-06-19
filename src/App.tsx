@@ -1129,7 +1129,7 @@ function RecommenderSection({
                     type="button"
                     key={option.label}
                     onClick={() => setRecommendation(index)}
-                    className={`recommendation-option ${active ? 'recommendation-option-active' : ''}`}
+                    className={`recommendation-option recommendation-option-${option.productId} ${active ? 'recommendation-option-active' : ''}`}
                     aria-pressed={active}
                   >
                     <span className="grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-ink">
@@ -1147,7 +1147,7 @@ function RecommenderSection({
 
           <motion.article
             key={`${product.id}-${recommendation}`}
-            className="recommendation-card"
+            className={`recommendation-card recommendation-card-${product.id}`}
             style={{ '--product-primary': product.colors.primary, '--product-secondary': product.colors.secondary, '--product-soft': product.colors.soft } as CSSProperties}
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1160,11 +1160,11 @@ function RecommenderSection({
               </AnimatePresence>
             </div>
             <div className="recommendation-copy">
-              <span className="rounded-full bg-white/18 px-4 py-2 text-sm font-black text-white">Recomendación</span>
+              <span className="recommendation-badge">Recomendación para ti</span>
               <h3 className="mt-5 text-5xl font-black text-white">{product.name}</h3>
               <p className="mt-3 text-xl font-bold text-white/78">{selectedOption.result}</p>
               <div className="mt-5 flex items-center gap-3">
-                <strong className="rounded-2xl bg-white px-4 py-3 text-xl text-ink">{formatPrice(product.price)}</strong>
+                <strong className="recommendation-price">{formatPrice(product.price)}</strong>
                 <span className="text-sm font-bold text-white/62">{product.volume}</span>
               </div>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -1286,12 +1286,12 @@ function FinalCta({ onAdd, onPack }: { onAdd: (product: Product) => void; onPack
               </button>
             </div>
           </motion.div>
-          <motion.div className="final-cta-visual final-duo-visual" initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+          <div className="final-cta-visual final-duo-visual">
             <span className="final-cta-orbit final-cta-orbit-one" aria-hidden="true" />
             <span className="final-cta-orbit final-cta-orbit-two" aria-hidden="true" />
             <img src={products[0].image} alt="Drink2Go EnergyMax" className="final-product final-product-left" loading="lazy" decoding="async" />
             <img src={products[1].image} alt="HelTea EnergyMax" className="final-product final-product-right" loading="lazy" decoding="async" />
-          </motion.div>
+          </div>
         </div>
       </Container>
     </section>
@@ -1860,11 +1860,13 @@ function Footer() {
               <img src="/energymax-icon.svg" alt="" className="brand-mark footer-mark" />
               <span className="brand-word tracking-wide">EnergyMax</span>
             </a>
-            <p>Prototipo académico. No procesa pagos reales.</p>
+            <p>Prototipo académico Energy&Co. No procesa pagos reales.</p>
           </div>
           <nav className="footer-nav" aria-label="Navegación inferior">
-            <a href="#productos">Productos</a>
+            <a href="#empresa">Empresa</a>
             <a href="#estrategia">Estrategia</a>
+            <a href="#productos">Productos</a>
+            <a href="#recomendador">Recomendador</a>
             <a href="#cobertura">Cobertura</a>
           </nav>
           <div className="footer-social" aria-label="Redes simuladas">
